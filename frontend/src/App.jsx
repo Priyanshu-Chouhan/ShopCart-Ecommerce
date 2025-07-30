@@ -19,41 +19,33 @@ import ViewOrder from './pages/customer/pages/ViewOrder';
 
 const App = () => {
   const dispatch = useDispatch();
-
   const { isLoggedIn, currentToken, currentRole, productData } = useSelector((state) => state.user);
 
-  // Access the environment variable
-  const API_URL = process.env.REACT_APP_API_URL;
-
   useEffect(() => {
-    console.log("API URL:", API_URL);
-
-    // Fetch products using the API URL
-    dispatch(getProducts());
-
+    // Check token validity on mount and when token changes
     if (currentToken) {
       dispatch(isTokenValid());
     }
-  }, [dispatch, currentToken, API_URL]);
+  }, [dispatch, currentToken]);
+
+  useEffect(() => {
+    // Fetch products when component mounts
+    dispatch(getProducts());
+  }, [dispatch]);
 
   return (
     <BrowserRouter>
       {(!isLoggedIn && currentRole === null) && (
         <>
           <Navbar />
-
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/Home" element={<Home />} />
             <Route path="*" element={<Navigate to="/" />} />
-
             <Route path="/Products" element={<Products productData={productData} />} />
-
             <Route path="/product/view/:id" element={<ViewProduct />} />
-
             <Route path="/Search" element={<CustomerSearch mode="Mobile" />} />
             <Route path="/ProductSearch" element={<CustomerSearch mode="Desktop" />} />
-
             <Route path="/Customerregister" element={<AuthenticationPage mode="Register" role="Customer" />} />
             <Route path="/Customerlogin" element={<AuthenticationPage mode="Login" role="Customer" />} />
             <Route path="/Sellerregister" element={<AuthenticationPage mode="Register" role="Seller" />} />
@@ -65,23 +57,17 @@ const App = () => {
       {(isLoggedIn && currentRole === "Customer") && (
         <>
           <Navbar />
-
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/Home" element={<Home />} />
             <Route path="*" element={<Navigate to="/" />} />
-
             <Route path="/Products" element={<Products productData={productData} />} />
-
             <Route path="/product/view/:id" element={<ViewProduct />} />
-
             <Route path="/Search" element={<CustomerSearch mode="Mobile" />} />
             <Route path="/ProductSearch" element={<CustomerSearch mode="Desktop" />} />
-
             <Route path="/Checkout" element={<CheckoutSteps />} />
             <Route path="/product/buy/:id" element={<CheckoutSteps />} />
             <Route path="/Aftermath" element={<CheckoutAftermath />} />
-
             <Route path="/Profile" element={<Profile />} />
             <Route path="/Orders" element={<CustomerOrders />} />
             <Route path="/order/view/:id" element={<ViewOrder />} />

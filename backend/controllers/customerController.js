@@ -4,34 +4,64 @@ const { createNewToken } = require('../utils/token.js');
 
 const customerRegister = async (req, res) => {
     try {
+        console.log('Registration request body:', req.body);
+
+        // Validate required fields
+        if (!req.body.email || !req.body.password || !req.body.name) {
+            console.log('Missing required fields:', req.body);
+            return res.status(400).json({ 
+                message: 'Missing required fields',
+                received: req.body 
+            });
+        }
+
+        // Check if email exists first
+        const existingcustomerByEmail = await Customer.findOne({ email: req.body.email });
+        console.log('Existing customer check:', existingcustomerByEmail);
+
+        if (existingcustomerByEmail) {
+            console.log('Email already exists:', req.body.email);
+            return res.status(400).json({ message: 'Email already exists' });
+        }
+
+        // Hash password
         const salt = await bcrypt.genSalt(10);
         const hashedPass = await bcrypt.hash(req.body.password, salt);
 
+        // Create new customer
         const customer = new Customer({
-            ...req.body,
-            password: hashedPass
+            name: req.body.name,
+            email: req.body.email,
+            password: hashedPass,
+            role: "Customer"
         });
 
-        const existingcustomerByEmail = await Customer.findOne({ email: req.body.email });
+        console.log('Attempting to save customer:', customer);
 
-        if (existingcustomerByEmail) {
-            res.send({ message: 'Email already exists' });
-        }
-        else {
-            let result = await customer.save();
-            result.password = undefined;
-            
-            const token = createNewToken(result._id)
+        // Save customer
+        let result = await customer.save();
+        console.log('Customer saved successfully:', result);
 
-            result = {
-                ...result._doc,
-                token: token
-            };
+        // Remove password from response
+        result.password = undefined;
+        
+        // Create token
+        const token = createNewToken(result._id);
 
-            res.send(result);
-        }
+        // Prepare response
+        result = {
+            ...result._doc,
+            token: token
+        };
+
+        console.log('Sending success response');
+        res.status(201).json(result);
     } catch (err) {
-        res.status(500).json(err);
+        console.error('Registration error:', err);
+        res.status(500).json({ 
+            message: 'Registration failed',
+            error: err.message 
+        });
     }
 };
 

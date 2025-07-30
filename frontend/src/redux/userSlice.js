@@ -1,31 +1,52 @@
 import { createSlice } from '@reduxjs/toolkit';
 import jwtDecode from 'jwt-decode';
 
-const initialState = {
-    status: 'idle',
-    loading: false,
-    currentUser: JSON.parse(localStorage.getItem('user')) || null,
-    currentRole: (JSON.parse(localStorage.getItem('user')) || {}).role || null,
-    currentToken: (JSON.parse(localStorage.getItem('user')) || {}).token || null,
-    isLoggedIn: false,
-    error: null,
-    response: null,
+// Helper function to get initial state from localStorage
+const getInitialState = () => {
+    const savedUser = localStorage.getItem('user');
+    const savedProductData = localStorage.getItem('productData');
+    
+    const initialState = {
+        status: 'idle',
+        loading: false,
+        currentUser: null,
+        currentRole: null,
+        currentToken: null,
+        isLoggedIn: false,
+        error: null,
+        response: null,
+        productData: [],
+        sellerProductData: [],
+        specificProductData: [],
+        productDetails: {},
+        productDetailsCart: {},
+        filteredProducts: [],
+        customersList: [],
+    };
 
-    responseReview: null,
-    responseProducts: null,
-    responseSellerProducts: null,
-    responseSpecificProducts: null,
-    responseDetails: null,
-    responseSearch: null,
-    responseCustomersList: null,
+    if (savedUser) {
+        try {
+            const parsedUser = JSON.parse(savedUser);
+            initialState.currentUser = parsedUser;
+            initialState.currentRole = parsedUser.role || null;
+            initialState.currentToken = parsedUser.token || null;
+            initialState.isLoggedIn = true;
+        } catch (error) {
+            console.error('Error parsing saved user:', error);
+            localStorage.removeItem('user');
+        }
+    }
 
-    productData: [],
-    sellerProductData: [],
-    specificProductData: [],
-    productDetails: {},
-    productDetailsCart: {},
-    filteredProducts: [],
-    customersList: [],
+    if (savedProductData) {
+        try {
+            initialState.productData = JSON.parse(savedProductData);
+        } catch (error) {
+            console.error('Error parsing saved product data:', error);
+            localStorage.removeItem('productData');
+        }
+    }
+
+    return initialState;
 };
 
 const updateCartDetailsInLocalStorage = (cartDetails) => {
@@ -45,7 +66,7 @@ export const updateShippingDataInLocalStorage = (shippingData) => {
 
 const userSlice = createSlice({
     name: 'user',
-    initialState,
+    initialState: getInitialState(),
     reducers: {
         authRequest: (state) => {
             state.status = 'loading';
@@ -74,14 +95,17 @@ const userSlice = createSlice({
             localStorage.setItem('user', JSON.stringify(action.payload));
         },
         authSuccess: (state, action) => {
-            localStorage.setItem('user', JSON.stringify(action.payload));
-            state.currentUser = action.payload;
-            state.currentRole = action.payload.role;
-            state.currentToken = action.payload.token;
+            const userData = action.payload;
+            state.currentUser = userData;
+            state.currentRole = userData.role;
+            state.currentToken = userData.token;
             state.status = 'success';
             state.response = null;
             state.error = null;
             state.isLoggedIn = true;
+            
+            // Save to localStorage
+            localStorage.setItem('user', JSON.stringify(userData));
         },
         addToCart: (state, action) => {
             const existingProduct = state.currentUser.cartDetails.find(
@@ -150,22 +174,13 @@ const userSlice = createSlice({
             state.status = 'failed';
             state.response = action.payload;
             state.error = null;
+            state.isLoggedIn = false;
         },
-        //before
-        // authError: (state, action) => {
-        //     state.status = 'error';
-        //     state.response = null;
-        //     state.error = action.payload;
-        // },
-        //after
         authError: (state, action) => {
             state.status = 'error';
             state.response = null;
-            state.error = {
-                message: action.payload.message,
-                code: action.payload.code,
-                status: action.payload.response?.status,
-            };
+            state.error = action.payload;
+            state.isLoggedIn = false;
         },
         
         
@@ -177,8 +192,15 @@ const userSlice = createSlice({
             state.currentRole = null;
             state.currentToken = null;
             state.error = null;
-            state.response = true;
+            state.response = null;
             state.isLoggedIn = false;
+            state.productData = [];
+            state.sellerProductData = [];
+            state.specificProductData = [];
+            state.productDetails = {};
+            state.productDetailsCart = {};
+            state.filteredProducts = [];
+            state.customersList = [];
         },
 
         isTokenValid: (state) => {
@@ -220,9 +242,10 @@ const userSlice = createSlice({
 
         productSuccess: (state, action) => {
             state.productData = action.payload;
-            state.responseProducts = null;
             state.loading = false;
             state.error = null;
+            // Save to localStorage
+            localStorage.setItem('productData', JSON.stringify(action.payload));
         },
         getProductsFailed: (state, action) => {
             state.responseProducts = action.payload;

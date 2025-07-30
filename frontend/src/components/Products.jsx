@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Container, Grid, Pagination } from '@mui/material';
+import { Container, Grid, Pagination, CircularProgress } from '@mui/material';
 import styled from 'styled-components';
 import { useDispatch, useSelector } from 'react-redux';
 import { addToCart } from '../redux/userSlice';
@@ -10,18 +10,17 @@ import { addStuff } from '../redux/userHandle';
 
 const Products = ({ productData }) => {
   const dispatch = useDispatch();
-
   const navigate = useNavigate();
   const itemsPerPage = 9;
 
-  const { currentRole, responseSearch } = useSelector(state => state.user);
+  const { currentRole, responseSearch, loading, error } = useSelector(state => state.user);
   const [currentPage, setCurrentPage] = useState(1);
   const [showPopup, setShowPopup] = useState(false);
   const [message, setMessage] = useState("");
 
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = productData.slice(indexOfFirstItem, indexOfLastItem);
+  const currentItems = productData?.slice(indexOfFirstItem, indexOfLastItem) || [];
 
   const handleAddToCart = (event, product) => {
     event.stopPropagation();
@@ -30,8 +29,14 @@ const Products = ({ productData }) => {
 
   const handleUpload = (event, product) => {
     event.stopPropagation();
-    console.log(product);
-    dispatch(addStuff("ProductCreate", product));
+    try {
+        console.log('Uploading product:', product);
+        dispatch(addStuff("ProductCreate", product));
+    } catch (error) {
+        console.error('Error uploading product:', error);
+        setMessage("Error uploading product. Please try again.");
+        setShowPopup(true);
+    }
   };
 
   const messageHandler = (event) => {
@@ -44,8 +49,24 @@ const Products = ({ productData }) => {
     setCurrentPage(value);
   };
 
+  if (loading) {
+    return (
+      <LoadingContainer>
+        <CircularProgress />
+      </LoadingContainer>
+    );
+  }
+
+  if (error) {
+    return <ErrorMessage>Error loading products: {error.message}</ErrorMessage>;
+  }
+
   if (responseSearch) {
-    return <div>Product not found</div>;
+    return <ErrorMessage>Product not found</ErrorMessage>;
+  }
+
+  if (!currentItems || currentItems.length === 0) {
+    return <ErrorMessage>No products available</ErrorMessage>;
   }
 
   return (
@@ -58,9 +79,9 @@ const Products = ({ productData }) => {
             sx={{ cursor: "pointer" }}
           >
             <ProductContainer>
-              <ProductImage src={data.productImage} />
+              <ProductImage src={data.productImage} alt={data.productName} />
               <ProductName>{data.productName}</ProductName>
-              <PriceMrp>{data.price.mrp}</PriceMrp>
+              <PriceMrp>₹{data.price.mrp}</PriceMrp>
               <PriceCost>₹{data.price.cost}</PriceCost>
               <PriceDiscount>{data.price.discountPercent}% off</PriceDiscount>
               <AddToCart>
@@ -91,7 +112,6 @@ const Products = ({ productData }) => {
                     </BasicButton>
                   </>
                 }
-
               </AddToCart>
             </ProductContainer>
           </Grid>
@@ -100,7 +120,7 @@ const Products = ({ productData }) => {
 
       <Container sx={{ mt: 10, mb: 10, display: "flex", justifyContent: 'center', alignItems: "center" }}>
         <Pagination
-          count={Math.ceil(productData.length / itemsPerPage)}
+          count={Math.ceil((productData?.length || 0) / itemsPerPage)}
           page={currentPage}
           onChange={handlePageChange}
           color="secondary"
@@ -109,10 +129,24 @@ const Products = ({ productData }) => {
 
       <Popup message={message} setShowPopup={setShowPopup} showPopup={showPopup} />
     </>
-  )
+  );
 };
 
 export default Products;
+
+const LoadingContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+`;
+
+const ErrorMessage = styled.div`
+  text-align: center;
+  color: #d32f2f;
+  padding: 20px;
+  font-size: 1.2rem;
+`;
 
 const ProductContainer = styled.div`
   display: flex;

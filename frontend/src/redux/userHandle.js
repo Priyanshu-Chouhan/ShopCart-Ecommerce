@@ -37,10 +37,12 @@ export const authUser = (fields, role, mode) => async (dispatch) => {
             dispatch(authSuccess(result.data));
         }
         else {
-            dispatch(authFailed(result.data.message));
+            const errorMessage = result.data.message || 'An error occurred';
+            dispatch(authFailed(errorMessage));
         }
     } catch (error) {
-        dispatch(authError(error));
+        const errorMessage = error.response?.data?.message || error.message || 'An error occurred';
+        dispatch(authFailed(errorMessage));
     }
 };
 
@@ -56,9 +58,14 @@ export const addStuff = (address, fields) => async (dispatch) => {
             dispatch(authFailed(result.data.message));
         } else {
             dispatch(stuffAdded());
+            // Refresh products after adding
+            if (address === "ProductCreate") {
+                dispatch(getProducts());
+            }
         }
     } catch (error) {
-        dispatch(authError(error));
+        const errorMessage = error.response?.data?.message || error.message || 'An error occurred while adding the product';
+        dispatch(authFailed(errorMessage));
     }
 };
 

@@ -3,26 +3,32 @@ const Customer = require("../models/customerSchema");
 
 const productCreate = async (req, res) => {
     try {
-        const product = new Product(req.body)
-
+        console.log('Creating product:', req.body);
+        const product = new Product(req.body);
         let result = await product.save();
-
-        res.send(result);
+        console.log('Product created successfully:', result);
+        res.status(201).json(result);
     } catch (err) {
-        res.status(500).json(err);
+        console.error('Error creating product:', err);
+        res.status(500).json({ message: 'Error creating product', error: err.message });
     }
 };
 
 const getProducts = async (req, res) => {
     try {
+        console.log('Fetching all products...');
         let products = await Product.find().populate("seller", "shopName");
+        console.log('Found products:', products.length);
+        
         if (products.length > 0) {
-            res.send(products);
+            res.json(products);
         } else {
-            res.send({ message: "No products found" });
+            console.log('No products found');
+            res.json({ message: "No products found" });
         }
     } catch (err) {
-        res.status(500).json(err);
+        console.error('Error fetching products:', err);
+        res.status(500).json({ message: 'Error fetching products', error: err.message });
     }
 };
 

@@ -92,6 +92,36 @@ These steps should resolve the network error in the frontend. If the issue persi
 Don't forget to leave a star for this project if you found the solution helpful. Thank you!
 
 # Deployment
-* Render - server side
-* Vercel - client sid
+
+## Backend Deployment (Render)
+
+1. **Push your code to GitHub.**
+2. Go to [Render](https://render.com/) and create a new Web Service.
+3. Connect your GitHub repository.
+4. Set the root directory to `backend` if prompted.
+5. Set the build and start commands:
+   - **Build Command:** `npm install`
+   - **Start Command:** `npm start`
+6. In the Render dashboard, go to the "Environment" section and add your environment variables (from your `.env` file):
+   - `MONGO_URL=your_mongodb_connection_string`
+   - `SECRET_KEY=your_secret_key`
+7. Deploy the service. Render will install dependencies and start your backend server.
+
+## Frontend Deployment (Vercel)
+
+1. **Push your code to GitHub.**
+2. Go to [Vercel](https://vercel.com/) and import your GitHub repository.
+3. Set the root directory to `frontend` if prompted.
+4. Set the build and output settings:
+   - **Build Command:** `npm install && npm run build`
+   - **Output Directory:** `build`
+5. If your frontend needs to know the backend URL, set an environment variable in Vercel:
+   - `REACT_APP_BASE_URL=https://your-backend-url.onrender.com`
+6. Deploy the project. Vercel will build and host your frontend.
+
+## Notes
+- **Never commit your `.env` file** to GitHub. Always add environment variables in the deployment dashboard.
+- **After deployment**, update your frontend's API URLs to point to your deployed backend (not `localhost`).
+- For any issues, check the deployment logs on Render or Vercel for error messages.
+
 >>>>>>> ae7bcc7 (inital commit)
